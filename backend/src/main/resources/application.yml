@@ -1,0 +1,103 @@
+# EventPass configuration. Secrets and environment-specific values come from
+# environment variables (or a local .env file, see .env.example) — never from this file.
+spring:
+  application:
+    name: eventpass
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/eventpass}
+    username: ${DB_USERNAME:eventpass}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema.
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+server:
+  port: ${PORT:8080}
+  # Trust X-Forwarded-* from the hosting platform's proxy (correct client IP and https scheme).
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+  servlet:
+    session:
+      timeout: 12h
+      cookie:
+        name: EVENTPASS_SESSION
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}
+  compression:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+springdoc:
+  api-docs:
+    path: /api/docs
+  swagger-ui:
+    path: /api/docs/ui
+  packages-to-scan: com.cubetech.eventpass
+
+app:
+  # Absolute public URL, used to build ticket links in emails.
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    from: ${MAIL_FROM:EventPass <no-reply@eventpass.local>}
+  demo:
+    # Seeds demo events, registrations and staff accounts when the database has no events.
+    seed: ${DEMO_SEED:true}
+    # Moves seeded demo events forward when their date has passed, so "event day" checks
+    # stay demonstrable. Only affects events created by the seeder.
+    rolling-dates: ${DEMO_ROLLING_DATES:true}
+    organizer-password: ${DEMO_ORGANIZER_PASSWORD:EventPass#2026}
+    door-staff-password: ${DEMO_DOOR_STAFF_PASSWORD:DoorStaff#2026}
+  rate-limit:
+    # Requests per client per minute.
+    ticket-lookup: ${RATE_LIMIT_LOOKUP:10}
+    registration: ${RATE_LIMIT_REGISTRATION:10}
+    check-in: ${RATE_LIMIT_CHECK_IN:120}
+    login: ${RATE_LIMIT_LOGIN:10}
+
+logging:
+  level:
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: error

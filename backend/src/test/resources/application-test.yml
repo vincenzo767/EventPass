@@ -1,0 +1,26 @@
+# Datasource URL/credentials are injected by IntegrationTest (embedded PostgreSQL); they take
+# precedence over any developer .env file.
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 30
+
+app:
+  public-base-url: http://localhost:8080
+  mail:
+    enabled: false
+  demo:
+    seed: false
+    rolling-dates: false
+    organizer-password: unused
+    door-staff-password: unused
+  rate-limit:
+    ticket-lookup: 10
+    registration: 1000
+    check-in: 1000
+    login: 20
+
+logging:
+  level:
+    root: warn
+    com.cubetech.eventpass: info
