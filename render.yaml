@@ -6,12 +6,14 @@ databases:
     databaseName: eventpass
     user: eventpass
     plan: free
+    region: singapore   # must match the web service; closest Render region to Cebu
 
 services:
   - type: web
     name: eventpass
     runtime: docker
     plan: free
+    region: singapore
     healthCheckPath: /actuator/health
     envVars:
       - key: DB_HOST
