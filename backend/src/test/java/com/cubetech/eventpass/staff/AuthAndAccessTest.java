@@ -70,7 +70,7 @@ class AuthAndAccessTest extends IntegrationTest {
         mvc.perform(post("/api/staff/events/{id}/check-ins", event.getId()).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"ticketCode\":\"TST-23456-23456\"}"))
                 .andExpect(status().isUnauthorized());
-        mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/auth/me")).andExpect(status().isNoContent());
     }
 
     @Test

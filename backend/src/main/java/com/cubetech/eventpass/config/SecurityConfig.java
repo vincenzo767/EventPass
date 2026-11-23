@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/csrf").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/csrf", "/api/auth/me").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/docs/**", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/**").authenticated()

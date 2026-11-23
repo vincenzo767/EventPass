@@ -77,9 +77,13 @@ public class AuthController {
         return StaffMeResponse.of((StaffPrincipal) authentication.getPrincipal());
     }
 
+    /**
+     * The signed-in staff member, or 204 No Content for anonymous visitors. Public pages check the
+     * session on load, so an anonymous visit is a normal outcome rather than an error.
+     */
     @GetMapping("/me")
-    public StaffMeResponse me(@AuthenticationPrincipal StaffPrincipal staff) {
-        return StaffMeResponse.of(staff);
+    public ResponseEntity<StaffMeResponse> me(@AuthenticationPrincipal StaffPrincipal staff) {
+        return staff == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(StaffMeResponse.of(staff));
     }
 
     /** Any request issues the XSRF-TOKEN cookie; this endpoint lets the SPA obtain it explicitly. */
