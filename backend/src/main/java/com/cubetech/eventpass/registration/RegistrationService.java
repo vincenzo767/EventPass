@@ -12,6 +12,7 @@ import com.cubetech.eventpass.registration.RegistrationDtos.TicketResponse;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -67,7 +68,7 @@ public class RegistrationService {
         if (registrations.existsActiveByEventAndEmail(eventId, email)) {
             throw new ApiException(HttpStatus.CONFLICT, "DUPLICATE_REGISTRATION",
                     "This email is already registered for this event. Use \"Find my ticket\" to view your ticket.",
-                    java.util.Map.of("email", "This email is already registered for this event."));
+                    Map.of("email", "This email is already registered for this event."));
         }
 
         long seatsTaken = registrations.countByEventIdAndStatusIn(eventId, RegistrationStatus.SEAT_HOLDING);

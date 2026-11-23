@@ -8,7 +8,8 @@ spring:
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/eventpass}
+    # Either a full DB_URL, or DB_HOST / DB_PORT / DB_NAME (as provided by managed PostgreSQL services).
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:eventpass}}
     username: ${DB_USERNAME:eventpass}
     password: ${DB_PASSWORD:}
     hikari:
@@ -62,6 +63,10 @@ server:
     enabled: true
 
 management:
+  health:
+    # Email is optional (sandbox only); an unconfigured SMTP server must not mark the app DOWN.
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:

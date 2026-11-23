@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+**/node_modules
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+backend/target
+backend/.local-db
+*.docx

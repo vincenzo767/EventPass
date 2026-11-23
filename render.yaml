@@ -1,0 +1,50 @@
+# Render Blueprint: one Docker web service (HTTPS is provided by Render) + managed PostgreSQL.
+# In the Render dashboard: New > Blueprint > select this repository. Then set the values
+# marked `sync: false` (they are prompted for and never stored in Git).
+databases:
+  - name: eventpass-db
+    databaseName: eventpass
+    user: eventpass
+    plan: free
+
+services:
+  - type: web
+    name: eventpass
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        fromDatabase: { name: eventpass-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: eventpass-db, property: port }
+      - key: DB_NAME
+        fromDatabase: { name: eventpass-db, property: database }
+      - key: DB_USERNAME
+        fromDatabase: { name: eventpass-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: eventpass-db, property: password }
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: JAVA_OPTS
+        value: "-XX:MaxRAMPercentage=70 -Djava.awt.headless=true"
+      - key: APP_PUBLIC_BASE_URL   # e.g. https://eventpass.onrender.com
+        sync: false
+      - key: DEMO_SEED
+        value: "true"
+      - key: DEMO_ROLLING_DATES
+        value: "true"
+      - key: DEMO_ORGANIZER_PASSWORD
+        sync: false
+      - key: DEMO_DOOR_STAFF_PASSWORD
+        sync: false
+      - key: MAIL_ENABLED
+        value: "false"
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false

@@ -1,10 +1,12 @@
 package com.cubetech.eventpass.registration;
 
+import com.cubetech.eventpass.config.TimeConfig;
 import com.cubetech.eventpass.registration.RegistrationDtos.AttendeeListResponse;
 import com.cubetech.eventpass.registration.RegistrationDtos.AttendeeResponse;
 import com.cubetech.eventpass.registration.RegistrationDtos.PromotionResponse;
 import com.cubetech.eventpass.registration.StaffRegistrationService.ExportData;
 import com.cubetech.eventpass.staff.StaffPrincipal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Locale;
 import org.springframework.http.ContentDisposition;
@@ -42,10 +44,10 @@ public class StaffRegistrationController {
         ExportData data = service.exportData(eventId, staff);
         String slug = data.event().getTitle().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)", "");
-        String filename = slug + "-attendees-" + LocalDate.now() + ".csv";
+        String filename = slug + "-attendees-" + LocalDate.now(TimeConfig.EVENT_ZONE) + ".csv";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString())
-                .contentType(new MediaType("text", "csv", java.nio.charset.StandardCharsets.UTF_8))
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
                 .body(AttendeeCsvWriter.write(data.attendees()));
     }
 

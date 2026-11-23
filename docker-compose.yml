@@ -1,0 +1,45 @@
+# Local, production-like stack: PostgreSQL 17 + the EventPass image.
+#   cp .env.example .env   (then set DB_PASSWORD)
+#   docker compose up --build
+# Open http://localhost:8080
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: eventpass
+      POSTGRES_USER: eventpass
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - eventpass-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventpass -d eventpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/eventpass
+      DB_USERNAME: eventpass
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      DEMO_SEED: ${DEMO_SEED:-true}
+      DEMO_ROLLING_DATES: ${DEMO_ROLLING_DATES:-true}
+      DEMO_ORGANIZER_PASSWORD: ${DEMO_ORGANIZER_PASSWORD:-EventPass#2026}
+      DEMO_DOOR_STAFF_PASSWORD: ${DEMO_DOOR_STAFF_PASSWORD:-DoorStaff#2026}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-EventPass <no-reply@eventpass.local>}
+
+volumes:
+  eventpass-db:

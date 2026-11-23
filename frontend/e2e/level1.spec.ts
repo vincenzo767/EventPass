@@ -3,7 +3,10 @@ import { checkInCode, createTodayEvent, registerViaApi, signIn, uid } from './he
 
 /** Level 1 acceptance checks from the CubeTech assessment, run in a real browser. */
 
-test('register for Cebu Dev Meetup 2026 and see a ticket with a QR code; refresh and find it again', async ({ page }) => {
+test('register for Cebu Dev Meetup 2026 and see a ticket with a QR code; refresh and find it again', async ({ page, request }) => {
+  const events = (await (await request.get('/api/public/events')).json()) as { title: string; spotsLeft: number }[]
+  const meetup = events.find((e) => e.title === 'Cebu Dev Meetup 2026')
+  test.skip(!meetup || meetup.spotsLeft === 0, 'Cebu Dev Meetup 2026 is full in this database; reset demo data to re-run')
   const email = `e2e.${uid()}@example.com`
 
   await page.goto('/')
@@ -20,7 +23,7 @@ test('register for Cebu Dev Meetup 2026 and see a ticket with a QR code; refresh
   await expect(page.getByText("You're registered!")).toBeVisible()
   const qr = page.getByRole('img', { name: /QR code for ticket/ })
   await expect(qr).toBeVisible()
-  expect(await qr.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(100)
+  await expect.poll(() => qr.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(100)
   const code = (await page.getByTestId('ticket-code').textContent())!.trim()
   expect(code).toMatch(/^CDM-[A-Z2-9]{5}-[A-Z2-9]{5}$/)
   await expect(page.getByText('Playwright Tester')).toBeVisible()
@@ -70,9 +73,9 @@ test('the same email cannot register twice for one event', async ({ page, reques
   await expect(page.getByText('You are already registered')).toBeVisible()
 })
 
-test('a bad email and a 10-digit mobile number both show errors', async ({ page }) => {
-  await page.goto('/')
-  await page.getByRole('link', { name: /Cebu Dev Meetup 2026/ }).click()
+test('a bad email and a 10-digit mobile number both show errors', async ({ page, request }) => {
+  const event = await createTodayEvent(request, `Validation Test ${uid()}`, 10)
+  await page.goto(`/events/${event.id}`)
   await page.getByRole('link', { name: 'Register' }).click()
   await page.getByLabel(/Full name/).fill('Bad Input')
   await page.getByLabel(/Email address/).fill('bad-email@nowhere')

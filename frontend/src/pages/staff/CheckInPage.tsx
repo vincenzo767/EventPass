@@ -77,6 +77,8 @@ export function CheckInConsole({ eventId }: { eventId: string }) {
 
   const [stats, setStats] = useState<CheckInResponse['stats']>()
   const [result, setResult] = useState<CheckInResponse>()
+  /** Camera results are overlaid on the preview so staff never need to scroll on a phone. */
+  const [resultSource, setResultSource] = useState<'camera' | 'manual'>('manual')
   const [requestError, setRequestError] = useState<string>()
   const [processing, setProcessing] = useState(false)
   const [cameraOn, setCameraOn] = useState(false)
@@ -111,6 +113,7 @@ export function CheckInConsole({ eventId }: { eventId: string }) {
       try {
         const response = await api.post<CheckInResponse>(`/api/staff/events/${eventId}/check-ins`, { ticketCode: rawCode })
         setResult(response)
+        setResultSource(source)
         setStats(response.stats)
         setRecent((list) => [{ id: nextId.current++, response, at: Date.now() }, ...list].slice(0, 8))
       } catch (e) {
@@ -218,7 +221,14 @@ export function CheckInConsole({ eventId }: { eventId: string }) {
               </Button>
             </div>
             {cameraOn ? (
-              <QrScanner paused={processing || cameraHold} onDecode={onDecode} />
+              <div className="relative">
+                <QrScanner paused={processing || cameraHold} onDecode={onDecode} />
+                {result && resultSource === 'camera' && (
+                  <div className="absolute inset-x-3 bottom-3">
+                    <CheckInResultPanel result={result} />
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
                 Start the camera to scan QR tickets from a phone screen or printout. The result shows for about 2 seconds,
@@ -252,7 +262,7 @@ export function CheckInConsole({ eventId }: { eventId: string }) {
           </form>
 
           {requestError && <Alert tone="error">{requestError}</Alert>}
-          {result && (
+          {result && (resultSource === 'manual' || !cameraOn) && (
             <CheckInResultPanel
               result={result}
               undoing={undoingId === result.registrationId}
