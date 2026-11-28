@@ -6,10 +6,11 @@ This was built for the **CubeTech Innovations Software Development Internship as
 
 | | |
 |---|---|
-| **Level reached** | Levels 1 and 2 fully pass. **Level 3: 4 items verified** (race conditions, secure QR, email, roles + audit log), above the minimum of 3. Camera scanning is implemented but still needs a real-device test, and the app is **not deployed yet**. See the [acceptance checklist](#22-acceptance-checklist). |
+| **Level reached** | Levels 1, 2 and 3 fully pass. **Level 3: all 6 items verified** (camera scanning, race conditions, secure QR, email, roles + audit log, deployment). See the [acceptance checklist](#22-acceptance-checklist). |
 | **Stack** | Java 21 · Spring Boot 3.5 · Spring Security · PostgreSQL 17 · Flyway · React 19 · TypeScript · Vite · Tailwind CSS 4 |
 | **Tests** | 94 backend (JUnit 5, real PostgreSQL) · 27 frontend (Vitest + React Testing Library) · 28 browser end-to-end (Playwright, phone + desktop) |
-| **Deployment URL** | *Not deployed yet.* The Render Blueprint and Dockerfile are ready; see [Deployment](#23-deployment). |
+| **Deployment URL** | **https://eventpass-bjdw.onrender.com/** (Render, Singapore region; see [Deployment](#23-deployment)) |
+| **Demo videos** | [Web walkthrough](docs/eventpass-web-walkthrough.webm) · [Mobile walkthrough](docs/eventpass-mobile-walkthrough.webm) |
 
 <p>
   <img src="docs/screenshots/ticket-mobile.png" alt="Digital ticket with QR code on a phone" width="210">
@@ -120,6 +121,23 @@ EventPass replaces this with one system. It enforces capacity on the server, iss
 
 **Frontend** (`frontend/src/`): `pages/public`, `pages/staff`, `components` (shared UI, ticket card, check-in scanner), `lib` (API client, Cebu-time formatting, validation), `auth` (session context and route guard). Staff pages are code-split, so attendees never download the scanner library.
 
+**Repository layout**
+
+```
+.github/workflows/ci.yml      CI: backend tests, frontend tests + build, Docker image build
+backend/                      Spring Boot API (Maven project)
+  src/main/java/…             feature packages (table above)
+  src/main/resources/         application.yml, Flyway migrations (db/migration)
+  src/test/                   unit + integration tests, embedded-PostgreSQL dev launcher
+  scripts/                    SQL helpers: create a local database, reset demo data
+  Dockerfile                  multi-stage production image (built from the repository root)
+  docker-compose.yml          local PostgreSQL + app stack
+  render.yaml                 Render Blueprint
+frontend/                     React + TypeScript SPA (Vite), Vitest and Playwright tests
+docs/                         implementation notes, screenshots, demo videos
+.env.example                  environment variable template (copy to .env)
+```
+
 ## 6. Features
 
 **Level 1: core**
@@ -148,7 +166,7 @@ EventPass replaces this with one system. It enforces capacity on the server, iss
 - **Secure ticket codes:** about 50 bits of CSPRNG randomness per code, rate limits on lookup, check-in, registration and sign-in, and no personal data in the QR.
 - **Email confirmation** after registration, on joining the waitlist and on promotion. Includes an inline QR image and a ticket link, sent through an SMTP sandbox.
 - **Roles and audit log:** Organizer and Door staff roles enforced with `@PreAuthorize`. The audit log records event created / edited / status changed, registration cancelled, waitlist promotion, check-in, undo check-in, and staff account changes.
-- **Deployment:** Dockerfile, docker-compose and a Render Blueprint are included. *The app has not been deployed yet.*
+- **Deployment:** live at https://eventpass-bjdw.onrender.com/ over HTTPS. The Dockerfile, docker-compose file and Render Blueprint are in `backend/`.
 
 ## 7. User roles and permissions
 
@@ -258,7 +276,7 @@ Camera scanning works on `localhost`. Other devices on your network need HTTPS (
 
 ```bash
 # 1. Create the database and user (adjust the password)
-psql -U postgres -f scripts/create-local-db.sql
+psql -U postgres -f backend/scripts/create-local-db.sql
 
 # 2. Configure
 cp .env.example .env        # set DB_URL / DB_USERNAME / DB_PASSWORD
@@ -268,7 +286,7 @@ cd frontend && npm install && npm run build && cd ..
 cd backend && mvn -DskipTests package && java -jar target/eventpass.jar
 ```
 
-Open **http://localhost:8080**. Alternatively, with Docker: `cp .env.example .env`, set `DB_PASSWORD`, then run `docker compose up --build`.
+Open **http://localhost:8080**. Alternatively, with Docker, from the repository root: `cp .env.example .env`, set `DB_PASSWORD`, then run `docker compose --env-file .env -f backend/docker-compose.yml up --build`.
 
 ## 15. Environment variables
 
@@ -307,7 +325,7 @@ To change the date manually, either:
 
 **Reset the demo data:**
 - *Embedded dev database:* stop the backend, delete `backend/.local-db/`, and start again.
-- *Your own PostgreSQL:* `psql "<connection>" -f scripts/reset-demo-data.sql`, then restart. ⚠️ This deletes all data.
+- *Your own PostgreSQL:* `psql "<connection>" -f backend/scripts/reset-demo-data.sql`, then restart. ⚠️ This deletes all data.
 
 ## 17. Production build
 
@@ -317,7 +335,7 @@ cd ../backend && mvn clean package -DskipTests  # packages the SPA into target/e
 java -jar target/eventpass.jar                  # with DB_* and other variables set
 ```
 
-or `docker build -t eventpass .` (multi-stage: Node build → Maven package → JRE runtime as a non-root user).
+or, from the repository root, `docker build -f backend/Dockerfile -t eventpass .` (multi-stage: Node build → Maven package → JRE runtime as a non-root user).
 The health endpoint is `/actuator/health`; Swagger UI is at `/api/docs/ui`.
 
 ## 18. Demo staff credentials
@@ -412,14 +430,14 @@ Verification performed: with an Ethereal sandbox account, a registration, a wait
 - **I:** backend integration test on real PostgreSQL
 - **U:** frontend component test
 - **M:** manual check
-- **Not verified:** still needs a real device or a deployment, so it **counts as FAIL until tested**
+- **D:** manual check on a physical phone against the deployed site
 
 ### Level 1 — Core: **PASS (12/12 verified)**
 
 | # | Check | Result | Verified by |
 |---|---|---|---|
 | 1 | Register for Cebu Dev Meetup 2026 on a phone-sized screen and see a ticket with a QR code | **PASS** | A (Pixel 7 viewport) |
-| 2 | Scan the QR with a phone QR app: it shows the same ticket code | **PASS** (automated) | I: the served QR PNG is decoded with ZXing and equals the ticket code. *A scan with a physical phone app is still recommended before the demo.* |
+| 2 | Scan the QR with a phone QR app: it shows the same ticket code | **PASS** | D: scanned with a phone QR app on a physical phone; I: the served QR PNG is decoded with ZXing and equals the ticket code |
 | 3 | Refresh the browser, then find the ticket again with ticket code + email | **PASS** | A, I |
 | 4 | Wrong ticket code or wrong email → "Ticket not found", no details | **PASS** | A, I |
 | 5 | Same email twice for one event → second attempt blocked | **PASS** | A, I, U |
@@ -446,27 +464,29 @@ Verification performed: with an Ethereal sandbox account, a registration, a wait
 | 9 | Undo a check-in: the ticket can be checked in again, and the undo is recorded | **PASS** | A, I |
 | 10 | Dashboard counts match the attendee list. CSV export opens correctly in Excel | **PASS** (counts and CSV format) | A, I. *The CSV follows Excel's conventions (UTF-8 BOM, CRLF, quoting) and was checked programmatically; it has not been opened in Microsoft Excel itself.* |
 
-### Level 3 — Advanced: **4 items verified (#13, #14, #15, #16); camera (#12) and deployment (#17) pending**
+### Level 3 — Advanced: **PASS (all 6 items verified)**
 
 | # | Item | Result | Verified by |
 |---|---|---|---|
-| 12 | Camera scan of a ticket on another phone's screen: correct result, then ready for the next scan | **Implemented; NOT VERIFIED on a real camera (counts as FAIL until tested)** | U: camera permission errors and the scan → 2 s result → reset flow, with a simulated camera. Needs a test on a phone over HTTPS. |
+| 12 | Camera scan of a ticket on another phone's screen: correct result, then ready for the next scan | **PASS** | D: scanned on a phone over HTTPS on the deployed site; U: camera permission errors and the scan → 2 s result → reset flow, with a simulated camera |
 | 13 | Two browsers register for the last spot at the same moment: only one gets it | **PASS** | I: 16 concurrent requests, repeated |
 | 13 | Two devices check in the same ticket at the same moment: only one says "Checked in" | **PASS** | I: 16 concurrent requests, repeated |
 | 14 | Guess a sequential or edited ticket code → never valid | **PASS** | I, A |
 | 15 | Registration and waitlist-promotion emails arrive in the sandbox inbox with the QR or ticket link | **PASS** | M: Ethereal sandbox, checked over IMAP; I: message content |
 | 16 | Door staff cannot create or edit events; Organizer can | **PASS** | A, I |
-| 17 | Deployed link works on a phone over HTTPS, including the camera | **FAIL: not deployed yet** | Deployment configuration is ready (§23); it needs a hosting account. |
+| 17 | Deployed link works on a phone over HTTPS, including the camera | **PASS** | D: https://eventpass-bjdw.onrender.com/ on a phone, including the camera; `/actuator/health` → `{"status":"UP"}` |
 
 ## 23. Deployment
 
+**Live:** https://eventpass-bjdw.onrender.com/ (Render, Singapore region, free plan).
+
 The app is a **single Docker service plus PostgreSQL**. HTTPS comes from the hosting platform, and camera access needs it.
 
-**Render (Blueprint included: [`render.yaml`](render.yaml))**
+**Render (Blueprint included: [`backend/render.yaml`](backend/render.yaml))**
 1. Push this repository to GitHub.
-2. In Render: **New → Blueprint**, then select the repository. This creates the `eventpass` web service (Docker) and the `eventpass-db` PostgreSQL database.
+2. In Render: **New → Blueprint**, select the repository and set the **Blueprint path** to `backend/render.yaml`. This creates the `eventpass` web service (Docker, built from `backend/Dockerfile` with the repository root as context) and the `eventpass-db` PostgreSQL database.
 3. When prompted, set:
-   - `APP_PUBLIC_BASE_URL` (e.g. `https://eventpass.onrender.com`);
+   - `APP_PUBLIC_BASE_URL` (e.g. `https://eventpass-bjdw.onrender.com`);
    - `DEMO_ORGANIZER_PASSWORD` and `DEMO_DOOR_STAFF_PASSWORD`;
    - optionally the `MAIL_*` sandbox credentials, with `MAIL_ENABLED=true`.
 4. Deploy. On first start, Flyway creates the schema and the demo data is seeded. Check `https://<your-app>/actuator/health` → `{"status":"UP"}`.
@@ -476,7 +496,6 @@ Any Docker host works the same way: run the image with the variables from §15 a
 
 ## 24. Known limitations
 
-- **Not deployed yet**, and camera scanning hasn't been tested on a physical phone (see the checklist). Both require actions outside this repository.
 - Free Render plans sleep after inactivity (the first request takes a while), and free PostgreSQL databases expire after 30 days.
 - Rate limits are kept in memory per application instance. A horizontally scaled deployment would move them to a shared store such as Redis.
 - Staff sessions are stored in server memory, so a restart signs staff out. A deactivated staff member's *existing* session stays valid until it expires (12 h), though they can't sign in again.
@@ -498,4 +517,4 @@ Any Docker host works the same way: run the image with the variables from §15 a
 
 ---
 
-See [DEMO_GUIDE.md](DEMO_GUIDE.md) for a 3–5 minute demonstration script, and [docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md) for the main design decisions.
+See [docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md) for the main design decisions, and the [web](docs/eventpass-web-walkthrough.webm) and [mobile](docs/eventpass-mobile-walkthrough.webm) walkthrough videos for a demonstration.

@@ -1,5 +1,6 @@
 # EventPass production image: builds the React SPA, packages it inside the Spring Boot jar,
 # and runs a single same-origin service on a slim JRE as a non-root user.
+# Build from the repository root:  docker build -f backend/Dockerfile -t eventpass .
 
 # ---- 1. Frontend ---------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS frontend

@@ -38,6 +38,5 @@ The key design decisions and the reasons for them, for developers maintaining Ev
 
 ## Known issues / follow-ups
 
-- Deploy (Render Blueprint ready) and run the camera check on a real phone over HTTPS.
 - Open an exported CSV in Microsoft Excel itself (the format follows Excel's conventions and was checked programmatically).
 - Move rate-limit counters and sessions to a shared store if the app is ever scaled to more than one instance.

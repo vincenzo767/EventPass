@@ -1,6 +1,6 @@
-# Local, production-like stack: PostgreSQL 17 + the EventPass image.
+# Local, production-like stack: PostgreSQL 17 + the EventPass image. Run from the repository root:
 #   cp .env.example .env   (then set DB_PASSWORD)
-#   docker compose up --build
+#   docker compose --env-file .env -f backend/docker-compose.yml up --build
 # Open http://localhost:8080
 services:
   db:
@@ -18,7 +18,9 @@ services:
       retries: 10
 
   app:
-    build: .
+    build:
+      context: ..                 # repository root: the image needs frontend/ and backend/
+      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
